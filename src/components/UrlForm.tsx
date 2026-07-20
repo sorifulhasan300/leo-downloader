@@ -7,9 +7,18 @@ interface UrlFormProps {
   isLoading: boolean;
   error: string | null;
   onClear: () => void;
+  placeholder?: string;
+  autoFocus?: boolean;
 }
 
-export default function UrlForm({ onSubmit, isLoading, error, onClear }: UrlFormProps) {
+export default function UrlForm({
+  onSubmit,
+  isLoading,
+  error,
+  onClear,
+  placeholder = "Paste video or audio URL here (e.g. YouTube, TikTok...)",
+  autoFocus = false,
+}: UrlFormProps) {
   const [url, setUrl] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [detectedPlatform, setDetectedPlatform] = useState<string | null>(null);
@@ -22,6 +31,13 @@ export default function UrlForm({ onSubmit, isLoading, error, onClear }: UrlForm
       setCanPaste(true);
     }
   }, []);
+
+  // Auto-focus logic
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
 
   // Standard URL check regex
   const urlRegex = /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/i;
@@ -115,7 +131,7 @@ export default function UrlForm({ onSubmit, isLoading, error, onClear }: UrlForm
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste video or audio URL here (e.g. YouTube, TikTok...)"
+              placeholder={placeholder}
               disabled={isLoading}
               className="w-full px-3 py-3.5 bg-transparent text-white placeholder-zinc-500 text-sm md:text-base border-none outline-none focus:ring-0 focus:outline-none disabled:opacity-50"
             />

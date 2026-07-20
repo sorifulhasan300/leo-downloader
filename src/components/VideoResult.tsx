@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import AdBanner from "./AdBanner";
+
 
 interface VideoMetadata {
   id: string;
@@ -246,6 +248,11 @@ export default function VideoResult({ metadata, formats, isLoading }: VideoResul
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* High-CPM Ad Placement below Download Quality options */}
+        <div className="mt-6 pt-5 border-t border-zinc-800/50">
+          <AdBanner placement="below-table" format="responsive" />
         </div>
       </div>
     </div>

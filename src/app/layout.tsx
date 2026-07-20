@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,23 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Interstitial / Popunder script initialization placeholder */}
+        {/* Replace with actual script URL or container element configuration from Monetag, PropellerAds or AdSense */}
+        <Script
+          id="popunder-ad-network"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Example configuration for Popunder / Interstitial ads (e.g. PropellerAds / Monetag)
+              // (function(s,u,z,p){s.src=u,s.setAttribute('data-zone',z),p.appendChild(s);})(document.createElement('script'),'https://iclickcdn.com/tag.min.js',1234567,document.body||document.documentElement);
+              console.log("LeoDownloader: Interstitial/Popunder script initialized.");
+            `,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
+

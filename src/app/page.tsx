@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import UrlForm from "@/components/UrlForm";
 import VideoResult from "@/components/VideoResult";
+import AdBanner from "@/components/AdBanner";
+
 
 interface FAQItem {
   question: string;
@@ -138,6 +140,11 @@ export default function Home() {
             High-performance media extractor. Save videos in high resolution or convert to MP3 instantly with zero restrictions.
           </p>
         </section>
+
+        {/* Ad Placement: Above URL Input Box */}
+        {/* <section className="w-full max-w-3xl mx-auto -mb-4 md:-mb-6">
+          <AdBanner placement="top" format="728x90" />
+        </section> */}
 
         {/* Input Form Section */}
         <section className="w-full max-w-3xl mx-auto">

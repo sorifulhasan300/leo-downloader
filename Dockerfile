@@ -16,13 +16,13 @@ WORKDIR /app
 
 # 2. Dependencies step
 FROM base AS deps
-COPY COPY leo-downloader/package.json leo-downloader/pnpm-lock.yaml leo-downloader/pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 3. Builder step
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY leo-downloader .
+COPY . .
 
 # Set environment for standalone Next.js build
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -1,0 +1,14 @@
+services:
+  downloader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leo-downloader
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./leo-downloader/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000

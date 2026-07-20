@@ -68,7 +68,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Call helper to retrieve metadata from yt-dlp
-    const metadata = await getVideoMetadata(url);
+    const response = await getVideoMetadata(url);
+
+    if (!response.success || !response.data) {
+      const errorType = response.errorType || "UNKNOWN";
+      const message = response.error || "An internal server error occurred.";
+      let status = 500;
+
+      switch (errorType) {
+        case "INVALID_URL":
+          status = 400;
+          break;
+        case "PRIVATE_VIDEO":
+        case "AGE_RESTRICTED":
+        case "GEO_LOCKED":
+          status = 403;
+          break;
+        case "DELETED_VIDEO":
+          status = 404;
+          break;
+        case "RATE_LIMITED":
+          status = 429;
+          break;
+        case "TIMEOUT":
+          status = 504;
+          break;
+        default:
+          status = 500;
+      }
+
+      return NextResponse.json(
+        { error: message, type: errorType },
+        { status }
+      );
+    }
+
+    const metadata = response.data;
 
     // Map raw format lists into user-friendly download options
     const formatOptions = metadata.formats.map((f) => {

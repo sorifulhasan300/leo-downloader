@@ -1,6 +1,7 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { getProxyArgs } from "./proxy";
+import { getProxyFlag } from "./proxy";
+import { VideoFormat, VideoMetadata, ExtractorResponse } from "../../types/downloader";
 
 // Mark this module for Node.js runtime execution in Next.js
 export const runtime = "nodejs";
@@ -34,36 +35,6 @@ export class YtDlpError extends Error {
       Error.captureStackTrace(this, YtDlpError);
     }
   }
-}
-
-// Interfaces for mapped clean metadata
-export interface VideoFormat {
-  formatId: string;
-  formatNote?: string;
-  ext: string;
-  url: string;
-  filesize: number | null;
-  width: number | null;
-  height: number | null;
-  fps: number | null;
-  vcodec: string;
-  acodec: string;
-  container?: string;
-  resolution?: string;
-  audioBitrate: number | null;
-  videoBitrate: number | null;
-}
-
-export interface VideoMetadata {
-  id: string;
-  title: string;
-  thumbnail: string;
-  thumbnails: { url: string; width?: number; height?: number }[];
-  duration: number; // in seconds
-  description?: string;
-  uploader?: string;
-  webpageUrl: string;
-  formats: VideoFormat[];
 }
 
 // Raw JSON schemas matching yt-dlp's output
@@ -248,23 +219,23 @@ function mapRawMetadata(raw: YtDlpRawOutput): VideoMetadata {
  * Bypasses shell execution to prevent injection attacks and handles rotating proxies dynamically.
  * 
  * @param url The target video URL to inspect
- * @returns Mapped clean VideoMetadata object
- * @throws YtDlpError for private, deleted, rate-limited, geo-locked, or timeout failures
+ * @returns Object with success status, data (VideoMetadata) on success, or error details on failure
  */
-export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
+export async function getVideoMetadata(url: string): Promise<ExtractorResponse> {
   // 1. Validate input URL format
   if (!url || !isValidUrl(url)) {
-    throw new YtDlpError(
-      "INVALID_URL",
-      "The provided string is not a valid HTTP or HTTPS URL."
-    );
+    return {
+      success: false,
+      error: "The provided string is not a valid HTTP or HTTPS URL.",
+      errorType: "INVALID_URL",
+    };
   }
 
   // Determine path of the yt-dlp executable
   const ytdlpPath = process.env.YTDLP_PATH || "yt-dlp";
 
   // Get next proxy argument from rotation list
-  const proxyArgs = getProxyArgs();
+  const proxyArgs = getProxyFlag();
 
   // Command arguments (safer than using a raw shell command)
   const args = [
@@ -281,35 +252,45 @@ export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
     });
 
     if (!stdout.trim()) {
-      throw new YtDlpError(
-        "COMMAND_FAILED",
-        "yt-dlp completed successfully but returned empty output."
-      );
+      return {
+        success: false,
+        error: "yt-dlp completed successfully but returned empty output.",
+        errorType: "COMMAND_FAILED",
+      };
     }
 
     const rawData = JSON.parse(stdout) as YtDlpRawOutput;
-    return mapRawMetadata(rawData);
+    const data = mapRawMetadata(rawData);
+    return {
+      success: true,
+      data,
+    };
   } catch (error: any) {
     // Check if the command timed out
     if (error.code === "ETIMEDOUT" || error.signal === "SIGTERM" || error.killed) {
-      throw new YtDlpError(
-        "TIMEOUT",
-        "The metadata extraction request timed out after 30 seconds.",
-        error.message
-      );
+      return {
+        success: false,
+        error: "The metadata extraction request timed out after 30 seconds.",
+        errorType: "TIMEOUT",
+      };
     }
 
     // Capture standard stderr from execFile failure
     const stderr = error.stderr || "";
     if (stderr) {
-      throw parseYtDlpError(stderr);
+      const parsedErr = parseYtDlpError(stderr);
+      return {
+        success: false,
+        error: parsedErr.message,
+        errorType: parsedErr.type,
+      };
     }
 
     // Fallback for general execution errors (e.g. executable not found)
-    throw new YtDlpError(
-      error.code === "ENOENT" ? "COMMAND_FAILED" : "UNKNOWN",
-      `yt-dlp execution failed: ${error.message}`,
-      error.stack
-    );
+    return {
+      success: false,
+      error: `yt-dlp execution failed: ${error.message}`,
+      errorType: error.code === "ENOENT" ? "COMMAND_FAILED" : "UNKNOWN",
+    };
   }
 }

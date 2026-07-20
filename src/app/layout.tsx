@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -76,8 +77,10 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
     creator: "@leodownloader",
   },
+  verification: {
+    google: "Zx5MEpo2nQ-1gjlyarInKBY9xgkVJrg8qFqe0hdgtcw",
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -91,6 +94,7 @@ export default function RootLayout({
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-950 text-white font-sans selection:bg-indigo-600 selection:text-white">
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
         {/* Interstitial / Popunder script initialization placeholder */}
         {/* Replace with actual script URL or container element configuration from Monetag, PropellerAds or AdSense */}
         <Script

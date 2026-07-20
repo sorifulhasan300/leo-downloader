@@ -16,7 +16,7 @@ WORKDIR /app
 
 # 2. Dependencies step
 FROM base AS deps
-COPY leo-downloader/package.json leo-downloader/pnpm-lock.yaml leo-downloader/pnpm-workspace.yaml ./
+COPY COPY leo-downloader/package.json leo-downloader/pnpm-lock.yaml leo-downloader/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 3. Builder step

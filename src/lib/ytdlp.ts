@@ -1,5 +1,8 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import { getProxyFlag } from "./proxy";
 import { VideoFormat, VideoMetadata, ExtractorResponse } from "../../types/downloader";
 
@@ -7,6 +10,17 @@ import { VideoFormat, VideoMetadata, ExtractorResponse } from "../../types/downl
 export const runtime = "nodejs";
 
 const execFilePromise = promisify(execFile);
+
+// Common yt-dlp CLI arguments to bypass bot checks, age restrictions, and certificate issues
+export const YTDLP_COMMON_ARGS = [
+  "--user-agent",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "--no-check-certificates",
+  "--no-warnings",
+  "--prefer-free-formats",
+  "--extractor-args",
+  "youtube:player_client=android,web",
+];
 
 // Define custom error types
 export type YtDlpErrorType =
@@ -239,6 +253,7 @@ export async function getVideoMetadata(url: string): Promise<ExtractorResponse> 
 
   // Command arguments (safer than using a raw shell command)
   const args = [
+    ...YTDLP_COMMON_ARGS,
     ...proxyArgs,
     "--dump-json",
     "--no-playlist",
@@ -294,3 +309,73 @@ export async function getVideoMetadata(url: string): Promise<ExtractorResponse> 
     };
   }
 }
+
+/**
+ * Downloads a video/audio file directly to OS temporary directory (/tmp/downloads or os.tmpdir()/downloads)
+ * using yt-dlp with anti-bot bypass parameters.
+ * Returns the exact absolute path to the downloaded file and a cleanup function.
+ */
+export async function downloadMediaFile(
+  url: string,
+  formatId?: string
+): Promise<{ filePath: string; cleanup: () => void }> {
+  const ytdlpPath = process.env.YTDLP_PATH || "yt-dlp";
+  const proxyArgs = getProxyFlag();
+
+  // 1. Ensure temp downloads folder exists
+  const tempDir = path.join(os.tmpdir(), "downloads");
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+
+  // 2. Generate a unique output file template
+  const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+  const outputTemplate = path.join(tempDir, `${fileId}.%(ext)s`);
+
+  // 3. Prepare yt-dlp arguments
+  const args = [
+    ...YTDLP_COMMON_ARGS,
+    ...proxyArgs,
+    "-o",
+    outputTemplate,
+    "--no-playlist",
+  ];
+
+  if (formatId) {
+    args.push("-f", formatId);
+  }
+
+  args.push(url);
+
+  // Execute yt-dlp to download the file into temp directory
+  await execFilePromise(ytdlpPath, args, {
+    maxBuffer: 1024 * 1024 * 50,
+    timeout: 120000, // 2 minutes max download time
+  });
+
+  // Find the generated output file matching fileId
+  const files = fs.readdirSync(tempDir);
+  const matchedFile = files.find((f) => f.startsWith(fileId));
+
+  if (!matchedFile) {
+    throw new YtDlpError(
+      "COMMAND_FAILED",
+      "Downloaded file could not be found in temporary directory."
+    );
+  }
+
+  const absolutePath = path.join(tempDir, matchedFile);
+
+  const cleanup = () => {
+    try {
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+      }
+    } catch (err) {
+      console.error(`Failed to cleanup temp file ${absolutePath}:`, err);
+    }
+  };
+
+  return { filePath: absolutePath, cleanup };
+}
+

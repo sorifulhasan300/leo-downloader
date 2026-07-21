@@ -167,7 +167,7 @@ export default function VideoResult({ metadata, formats, isLoading }: VideoResul
             </thead>
             <tbody className="divide-y divide-zinc-800/50 text-sm">
               {uniqueFormats.map((format) => {
-                const downloadUrl = `/api/download?url=${encodeURIComponent(format.url)}&title=${encodeURIComponent(metadata.title + "." + format.ext)}`;
+                const downloadUrl = `/api/download?url=${encodeURIComponent(metadata.webpageUrl || format.url)}&formatId=${encodeURIComponent(format.formatId)}&title=${encodeURIComponent(metadata.title + "." + format.ext)}`;
                 
                 // Determine format badges
                 let isHd = false;

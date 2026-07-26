@@ -62,12 +62,21 @@ export default function Home() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to parse video metadata.");
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.message || "Failed to parse video metadata.");
       }
 
-      setMetadata(data.metadata);
-      setFormats(data.formats || []);
+      const videoData = {
+        title: data.data?.title || data.title || "Social Video",
+        author: data.data?.author || data.author || "",
+        thumbnail: data.data?.thumbnail || data.thumbnail || "",
+        source: data.data?.source || data.source || url,
+        duration: data.data?.duration || data.duration || 0,
+        medias: data.data?.medias || data.medias || data.formats || [],
+      };
+
+      setMetadata(videoData);
+      setFormats(videoData.medias);
     } catch (err: any) {
       setError(err.message || "An unexpected network or server error occurred.");
     } finally {

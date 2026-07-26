@@ -11,16 +11,57 @@ export const runtime = "nodejs";
 
 const execFilePromise = promisify(execFile);
 
+// Modern User Agent string
+export const DEFAULT_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
+// Client strategies for YouTube extractor retries
+export const YOUTUBE_CLIENT_STRATEGIES = [
+  "youtube:player_client=android,web,tv",
+  "youtube:player_client=android,web",
+  "youtube:player_client=web,mweb",
+  "youtube:player_client=tv,android",
+];
+
 // Common yt-dlp CLI arguments to bypass bot checks, age restrictions, and certificate issues
 export const YTDLP_COMMON_ARGS = [
   "--user-agent",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  DEFAULT_USER_AGENT,
   "--no-check-certificates",
   "--no-warnings",
-  "--prefer-free-formats",
-  "--extractor-args",
-  "youtube:player_client=android,web",
+  "--dump-single-json",
+  "--flat-playlist",
+  "--skip-download",
 ];
+
+/**
+ * Resolves cookie file path if a cookies.txt file exists in:
+ * 1. process.env.YTDLP_COOKIES_PATH
+ * 2. Root project directory (process.cwd() + '/cookies.txt')
+ * 3. /tmp/cookies.txt or os.tmpdir() + '/cookies.txt'
+ * 
+ * @returns Array with ['--cookies', filePath] if found, or empty array []
+ */
+export function getCookieFlag(): string[] {
+  const candidatePaths = [
+    process.env.YTDLP_COOKIES_PATH,
+    path.join(process.cwd(), "cookies.txt"),
+    path.join(os.tmpdir(), "cookies.txt"),
+    "/tmp/cookies.txt",
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidatePaths) {
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return ["--cookies", candidate];
+      }
+    } catch {
+      // Ignore filesystem check errors
+    }
+  }
+
+  return [];
+}
 
 // Define custom error types
 export type YtDlpErrorType =
@@ -81,6 +122,7 @@ interface YtDlpRawOutput {
   uploader?: string;
   webpage_url?: string;
   formats?: YtDlpRawFormat[];
+  entries?: YtDlpRawOutput[];
 }
 
 /**
@@ -184,14 +226,14 @@ function parseYtDlpError(stderr: string): YtDlpError {
  * Maps raw yt-dlp JSON output to a clean TypeScript VideoMetadata object.
  */
 function mapRawMetadata(raw: YtDlpRawOutput): VideoMetadata {
-  // Filter out storyboards, mhtml streams, and other formats that aren't download targets
-  const filteredFormats = (raw.formats || [])
+  // If flat playlist resulted in entries, pick the first video entry or raw
+  const target = raw.entries && raw.entries.length > 0 ? raw.entries[0] : raw;
+
+  const filteredFormats = (target.formats || [])
     .filter((f) => {
-      // Exclude storyboards and mhtml layouts
       if (f.protocol === "mhtml" || f.format_note === "storyboard") {
         return false;
       }
-      // Ensure we have a valid direct stream URL
       return !!f.url;
     })
     .map((f): VideoFormat => ({
@@ -212,30 +254,34 @@ function mapRawMetadata(raw: YtDlpRawOutput): VideoMetadata {
     }));
 
   return {
-    id: raw.id,
-    title: raw.title || "Unknown Title",
-    thumbnail: raw.thumbnail || "",
-    thumbnails: (raw.thumbnails || []).map((t) => ({
+    id: target.id || raw.id,
+    title: target.title || raw.title || "Unknown Title",
+    thumbnail: target.thumbnail || raw.thumbnail || "",
+    thumbnails: (target.thumbnails || raw.thumbnails || []).map((t) => ({
       url: t.url,
       width: t.width,
       height: t.height,
     })),
-    duration: raw.duration || 0,
-    description: raw.description || undefined,
-    uploader: raw.uploader || undefined,
-    webpageUrl: raw.webpage_url || "",
+    duration: target.duration ?? raw.duration ?? 0,
+    description: target.description || raw.description || undefined,
+    uploader: target.uploader || raw.uploader || undefined,
+    webpageUrl: target.webpage_url || raw.webpage_url || "",
     formats: filteredFormats,
   };
 }
 
 /**
- * Safely extracts video details (title, thumbnail, duration, formats, direct links) using yt-dlp.
- * Bypasses shell execution to prevent injection attacks and handles rotating proxies dynamically.
+ * Safely extracts video details using yt-dlp with retry logic, dynamic extractor flags,
+ * proxy rotation, and cookies support.
  * 
  * @param url The target video URL to inspect
- * @returns Object with success status, data (VideoMetadata) on success, or error details on failure
+ * @param maxRetries Maximum retry attempts (default: 2 retries = 3 total attempts)
+ * @returns ExtractorResponse with video metadata or structured error details
  */
-export async function getVideoMetadata(url: string): Promise<ExtractorResponse> {
+export async function getVideoMetadata(
+  url: string,
+  maxRetries: number = 2
+): Promise<ExtractorResponse> {
   // 1. Validate input URL format
   if (!url || !isValidUrl(url)) {
     return {
@@ -248,72 +294,100 @@ export async function getVideoMetadata(url: string): Promise<ExtractorResponse> 
   // Determine path of the yt-dlp executable
   const ytdlpPath = process.env.YTDLP_PATH || "yt-dlp";
 
-  // Get next proxy argument from rotation list
-  const proxyArgs = getProxyFlag();
+  // Resolve cookie and proxy flags
+  const cookieArgs = getCookieFlag();
 
-  // Command arguments (safer than using a raw shell command)
-  const args = [
-    ...YTDLP_COMMON_ARGS,
-    ...proxyArgs,
-    "--dump-json",
-    "--no-playlist",
-    url,
-  ];
+  let lastError: any = null;
+  let lastStderr: string = "";
 
-  try {
-    const { stdout } = await execFilePromise(ytdlpPath, args, {
-      maxBuffer: 1024 * 1024 * 10, // Allow up to 10MB buffer for large metadata outputs
-      timeout: 30000, // Timeout after 30 seconds
-    });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Get fresh proxy for each attempt (rotates if PROXY_LIST is provided)
+    const proxyArgs = getProxyFlag();
 
-    if (!stdout.trim()) {
+    // Select player client extractor argument for this attempt
+    const clientStrategy = YOUTUBE_CLIENT_STRATEGIES[attempt % YOUTUBE_CLIENT_STRATEGIES.length];
+
+    const args = [
+      ...YTDLP_COMMON_ARGS,
+      "--extractor-args",
+      clientStrategy,
+      ...proxyArgs,
+      ...cookieArgs,
+      url,
+    ];
+
+    try {
+      console.log(
+        `[yt-dlp metadata extraction] Attempt ${attempt + 1}/${maxRetries + 1} for URL: ${url} (Strategy: ${clientStrategy}, Proxy: ${proxyArgs.length ? proxyArgs[1] : "none"}, Cookies: ${cookieArgs.length ? cookieArgs[1] : "none"})`
+      );
+
+      const { stdout, stderr } = await execFilePromise(ytdlpPath, args, {
+        maxBuffer: 1024 * 1024 * 15, // 15MB buffer
+        timeout: 30000, // 30s timeout
+      });
+
+      if (stderr) {
+        console.warn(`[yt-dlp stderr] Attempt ${attempt + 1}: ${stderr.trim()}`);
+      }
+
+      if (!stdout.trim()) {
+        throw new Error("yt-dlp returned empty JSON stdout.");
+      }
+
+      const rawData = JSON.parse(stdout) as YtDlpRawOutput;
+      const data = mapRawMetadata(rawData);
+
       return {
-        success: false,
-        error: "yt-dlp completed successfully but returned empty output.",
-        errorType: "COMMAND_FAILED",
+        success: true,
+        data,
       };
-    }
+    } catch (err: any) {
+      lastError = err;
+      lastStderr = err.stderr || err.message || "";
 
-    const rawData = JSON.parse(stdout) as YtDlpRawOutput;
-    const data = mapRawMetadata(rawData);
-    return {
-      success: true,
-      data,
-    };
-  } catch (error: any) {
-    // Check if the command timed out
-    if (error.code === "ETIMEDOUT" || error.signal === "SIGTERM" || error.killed) {
-      return {
-        success: false,
-        error: "The metadata extraction request timed out after 30 seconds.",
-        errorType: "TIMEOUT",
-      };
-    }
+      console.error(
+        `[yt-dlp extraction error] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${err.message}`
+      );
+      if (lastStderr) {
+        console.error(`[yt-dlp stderr details]:\n${lastStderr}`);
+      }
 
-    // Capture standard stderr from execFile failure
-    const stderr = error.stderr || "";
-    if (stderr) {
-      const parsedErr = parseYtDlpError(stderr);
-      return {
-        success: false,
-        error: parsedErr.message,
-        errorType: parsedErr.type,
-      };
+      // If it's an invalid URL, retrying won't help
+      if (lastStderr.toLowerCase().includes("unsupported url")) {
+        break;
+      }
     }
+  }
 
-    // Fallback for general execution errors (e.g. executable not found)
+  // Handle final failure after retries
+  if (lastError?.code === "ETIMEDOUT" || lastError?.signal === "SIGTERM" || lastError?.killed) {
     return {
       success: false,
-      error: `yt-dlp execution failed: ${error.message}`,
-      errorType: error.code === "ENOENT" ? "COMMAND_FAILED" : "UNKNOWN",
+      error: "The metadata extraction request timed out after multiple attempts.",
+      errorType: "TIMEOUT",
     };
   }
+
+  if (lastStderr) {
+    const parsedErr = parseYtDlpError(lastStderr);
+    return {
+      success: false,
+      error: parsedErr.message,
+      errorType: parsedErr.type,
+    };
+  }
+
+  return {
+    success: false,
+    error: `yt-dlp execution failed: ${lastError?.message || "Unknown error"}`,
+    errorType: lastError?.code === "ENOENT" ? "COMMAND_FAILED" : "UNKNOWN",
+  };
 }
 
 /**
- * Downloads a video/audio file directly to OS temporary directory (/tmp/downloads or os.tmpdir()/downloads)
- * using yt-dlp with anti-bot bypass parameters.
- * Returns the exact absolute path to the downloaded file and a cleanup function.
+ * Downloads a video/audio file directly to OS temporary directory
+ * using yt-dlp with anti-bot bypass parameters, proxy, and cookie flags.
+ * Dynamic file detection matches any output extension (.mp4, .webm, .mkv, .mp3, etc.)
  */
 export async function downloadMediaFile(
   url: string,
@@ -321,43 +395,76 @@ export async function downloadMediaFile(
 ): Promise<{ filePath: string; cleanup: () => void }> {
   const ytdlpPath = process.env.YTDLP_PATH || "yt-dlp";
   const proxyArgs = getProxyFlag();
+  const cookieArgs = getCookieFlag();
 
-  // 1. Ensure temp downloads folder exists
+  // 1. Ensure temp downloads folder exists in OS temporary directory
   const tempDir = path.join(os.tmpdir(), "downloads");
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  // 2. Generate a unique output file template
-  const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-  const outputTemplate = path.join(tempDir, `${fileId}.%(ext)s`);
+  // 2. Generate a unique output file template prefix
+  const uniqueId = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const outputTemplate = path.join(tempDir, `${uniqueId}.%(ext)s`);
 
   // 3. Prepare yt-dlp arguments
   const args = [
-    ...YTDLP_COMMON_ARGS,
+    "--user-agent",
+    DEFAULT_USER_AGENT,
+    "--no-check-certificates",
+    "--no-warnings",
+    "--extractor-args",
+    "youtube:player_client=android,web,tv",
     ...proxyArgs,
+    ...cookieArgs,
     "-o",
     outputTemplate,
     "--no-playlist",
   ];
 
+  // Handle formatId selection and virtual MP3 extraction
   if (formatId) {
-    args.push("-f", formatId);
+    if (formatId.endsWith("-mp3")) {
+      const cleanFormatId = formatId.replace("-mp3", "");
+      args.push("-f", cleanFormatId, "-x", "--audio-format", "mp3");
+    } else {
+      args.push("-f", formatId);
+    }
   }
 
   args.push(url);
 
-  // Execute yt-dlp to download the file into temp directory
-  await execFilePromise(ytdlpPath, args, {
-    maxBuffer: 1024 * 1024 * 50,
-    timeout: 120000, // 2 minutes max download time
-  });
+  console.log(`[yt-dlp download] Executing download for ${url} (uniqueId: ${uniqueId})`);
 
-  // Find the generated output file matching fileId
+  try {
+    const { stderr } = await execFilePromise(ytdlpPath, args, {
+      maxBuffer: 1024 * 1024 * 50,
+      timeout: 120000, // 2 minutes max download time
+    });
+
+    if (stderr) {
+      console.warn(`[yt-dlp download stderr]: ${stderr.trim()}`);
+    }
+  } catch (err: any) {
+    console.error(`[yt-dlp download error]: ${err.message}`);
+    if (err.stderr) {
+      console.error(`[yt-dlp download stderr details]:\n${err.stderr}`);
+    }
+    throw parseYtDlpError(err.stderr || err.message);
+  }
+
+  // 4. Dynamic File Detection: Read directory to find the generated file matching uniqueId
   const files = fs.readdirSync(tempDir);
-  const matchedFile = files.find((f) => f.startsWith(fileId));
+  const matchedFile = files.find(
+    (f) =>
+      f.startsWith(uniqueId) &&
+      !f.endsWith(".part") &&
+      !f.endsWith(".ytdl") &&
+      !f.endsWith(".tmp")
+  );
 
   if (!matchedFile) {
+    console.error(`[yt-dlp download match failure] uniqueId: ${uniqueId}. Files in ${tempDir}:`, files);
     throw new YtDlpError(
       "COMMAND_FAILED",
       "Downloaded file could not be found in temporary directory."
@@ -366,10 +473,12 @@ export async function downloadMediaFile(
 
   const absolutePath = path.join(tempDir, matchedFile);
 
+  // 5. Safe Cleanup callback
   const cleanup = () => {
     try {
       if (fs.existsSync(absolutePath)) {
         fs.unlinkSync(absolutePath);
+        console.log(`[yt-dlp cleanup] Deleted temporary file: ${absolutePath}`);
       }
     } catch (err) {
       console.error(`Failed to cleanup temp file ${absolutePath}:`, err);
@@ -378,4 +487,6 @@ export async function downloadMediaFile(
 
   return { filePath: absolutePath, cleanup };
 }
+
+
 

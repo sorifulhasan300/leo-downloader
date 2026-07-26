@@ -1,222 +1,178 @@
-import { NextResponse, NextRequest } from "next/server";
-import { getVideoMetadata, YtDlpError } from "@/lib/ytdlp";
+import { NextRequest, NextResponse } from "next/server";
+import { fetchSocialMediaData, ApiResponse } from "@/lib/socialApi";
 
-// Force Node.js runtime since yt-dlp execution requires child_process
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-// Basic in-memory rate limiting map to prevent abuse
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const LIMIT = 30; // Max 30 requests per minute
-const WINDOW_MS = 60 * 1000; // 1 minute window
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-
-  // Prune expired entries to prevent memory leaks
-  for (const [key, value] of rateLimitMap.entries()) {
-    if (now > value.resetTime) {
-      rateLimitMap.delete(key);
-    }
-  }
-
-  const record = rateLimitMap.get(ip);
-  if (!record) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+/**
+ * Validates whether a string is a valid HTTP/HTTPS URL.
+ */
+function isValidUrl(urlString: string): boolean {
+  try {
+    const parsedUrl = new URL(urlString);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
     return false;
   }
-
-  if (now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
-    return false;
-  }
-
-  record.count += 1;
-  return record.count > LIMIT;
 }
 
-export async function POST(request: NextRequest) {
-  // Get request IP for rate limiting
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "127.0.0.1";
-
-  if (isRateLimited(ip)) {
+/**
+ * Helper to process social media extract/download requests via ZM API.
+ */
+async function processSocialMediaRequest(urlParam: unknown) {
+  // 1. Validate incoming URL string
+  if (!urlParam || typeof urlParam !== "string" || !urlParam.trim()) {
     return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": "60" } }
+      {
+        success: false,
+        error: "Missing or invalid 'url' parameter. Please provide a valid video link.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const trimmedUrl = urlParam.trim();
+
+  if (!isValidUrl(trimmedUrl)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Invalid video URL. Must be a valid HTTP or HTTPS link.",
+      },
+      { status: 400 }
     );
   }
 
   try {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
+    // 2. Call fetchSocialMediaData from @/lib/socialApi
+    const apiResponse: ApiResponse = await fetchSocialMediaData(trimmedUrl);
+
+    // 3. If ZM API returns an error or empty media list, return failure response
+    if (
+      !apiResponse ||
+      apiResponse.error ||
+      !Array.isArray(apiResponse.medias) ||
+      apiResponse.medias.length === 0
+    ) {
       return NextResponse.json(
-        { error: "Invalid JSON request body" },
+        {
+          success: false,
+          error: apiResponse?.message || "Failed to process video link.",
+        },
         { status: 400 }
       );
     }
 
-    const { url } = body;
-    if (!url || typeof url !== "string") {
-      return NextResponse.json(
-        { error: "Missing or invalid 'url' parameter in request body" },
-        { status: 400 }
-      );
+    // 4. Parse response & format properly for frontend
+    const title = apiResponse.title || "Social Media Video";
+
+    let author = "";
+    if (typeof apiResponse.author === "string") {
+      author = apiResponse.author;
+    } else if (apiResponse.author && typeof apiResponse.author === "object") {
+      author = apiResponse.author.name || apiResponse.author.username || "";
     }
 
-    // Call helper to retrieve metadata from yt-dlp
-    const response = await getVideoMetadata(url);
+    const thumbnail = apiResponse.thumbnail || "";
+    const source = apiResponse.source || trimmedUrl;
 
-    if (!response.success || !response.data) {
-      const errorType = response.errorType || "UNKNOWN";
-      const message = response.error || "An internal server error occurred.";
-      let status = 500;
-
-      switch (errorType) {
-        case "INVALID_URL":
-          status = 400;
-          break;
-        case "PRIVATE_VIDEO":
-        case "AGE_RESTRICTED":
-        case "GEO_LOCKED":
-          status = 403;
-          break;
-        case "DELETED_VIDEO":
-          status = 404;
-          break;
-        case "RATE_LIMITED":
-          status = 429;
-          break;
-        case "TIMEOUT":
-          status = 504;
-          break;
-        default:
-          status = 500;
-      }
-
-      return NextResponse.json(
-        { error: message, type: errorType },
-        { status }
-      );
+    let duration: number = 0;
+    if (typeof apiResponse.duration === "number") {
+      duration = apiResponse.duration;
+    } else if (typeof apiResponse.duration === "string") {
+      duration = parseFloat(apiResponse.duration) || 0;
     }
 
-    const metadata = response.data;
-
-    // Map raw format lists into user-friendly download options
-    const formatOptions = metadata.formats.map((f) => {
-      const hasVideo = f.vcodec && f.vcodec !== "none";
-      const hasAudio = f.acodec && f.acodec !== "none";
-
-      let qualityLabel = "";
-      if (hasVideo && hasAudio) {
-        qualityLabel = `${f.height ? f.height + "p" : f.resolution || "Video"} (${f.ext})`;
-      } else if (hasVideo) {
-        qualityLabel = `${f.height ? f.height + "p" : f.resolution || "Video"} (${f.ext}) [Video Only]`;
-      } else if (hasAudio) {
-        qualityLabel = `Audio (${f.ext || "m4a"})`;
-      } else {
-        qualityLabel = `Format ${f.formatId} (${f.ext})`;
-      }
+    const medias = apiResponse.medias.map((media, index) => {
+      const extension = media.extension || (media.type === "audio" ? "mp3" : "mp4");
+      const quality = media.quality || (media.type === "audio" ? "Audio MP3" : "HD No Watermark");
+      const mediaType = media.type || (quality.toLowerCase().includes("audio") ? "audio" : "video");
+      const hasAudio = mediaType !== "video_only";
+      const hasVideo = mediaType !== "audio";
 
       return {
-        formatId: f.formatId,
-        quality: qualityLabel,
-        ext: f.ext,
-        filesize: f.filesize,
-        url: f.url,
-        fps: f.fps,
+        url: media.url,
+        quality,
+        extension,
+        type: mediaType,
+        width: media.width || null,
+        height: media.height || null,
+        data_size: media.data_size || null,
+
+        // Frontend compatibility properties
+        formatId: `media-${index}-${extension}`,
+        ext: extension,
+        filesize: media.data_size || null,
         hasAudio,
         hasVideo,
-        width: f.width,
-        height: f.height,
+        fps: null,
       };
     });
 
-    // Extract audio-only formats to create a dedicated MP3 download option
-    const audioOnlyFormats = metadata.formats.filter(
-      (f) => f.vcodec === "none" && f.acodec !== "none"
-    );
-
-    if (audioOnlyFormats.length > 0) {
-      // Find the best audio format based on audioBitrate
-      const bestAudio = audioOnlyFormats.reduce((prev, current) => {
-        const prevBitrate = prev.audioBitrate || 0;
-        const currentBitrate = current.audioBitrate || 0;
-        return currentBitrate > prevBitrate ? current : prev;
-      }, audioOnlyFormats[0]);
-
-      // Add a virtual MP3 option which the client can download as MP3
-      formatOptions.push({
-        formatId: `${bestAudio.formatId}-mp3`,
-        quality: "Audio (MP3)",
-        ext: "mp3",
-        filesize: bestAudio.filesize,
-        url: bestAudio.url,
-        fps: null,
-        hasAudio: true,
-        hasVideo: false,
-        width: null,
-        height: null,
-      });
-    }
-
-    // Sort video formats from highest quality to lowest, then append audio formats
-    const videoOptions = formatOptions
-      .filter((o) => o.hasVideo)
-      .sort((a, b) => (b.height || 0) - (a.height || 0));
-
-    const audioOptions = formatOptions.filter((o) => !o.hasVideo);
-
-    const sortedOptions = [...videoOptions, ...audioOptions];
-
     return NextResponse.json({
-      metadata: {
-        id: metadata.id,
-        title: metadata.title,
-        thumbnail: metadata.thumbnail,
-        thumbnails: metadata.thumbnails,
-        duration: metadata.duration,
-        description: metadata.description,
-        uploader: metadata.uploader,
-        webpageUrl: metadata.webpageUrl,
+      success: true,
+      data: {
+        title,
+        author,
+        thumbnail,
+        source,
+        duration,
+        medias,
       },
-      formats: sortedOptions,
+      // Convenience properties
+      title,
+      author,
+      thumbnail,
+      source,
+      duration,
+      medias,
+      // Backward compatibility for existing UI components
+      metadata: {
+        id: source,
+        title,
+        thumbnail,
+        duration,
+        uploader: author,
+        author,
+        webpageUrl: source,
+      },
+      formats: medias,
     });
   } catch (error: any) {
-    let status = 500;
-    let message = "An internal server error occurred.";
-
-    if (error instanceof YtDlpError) {
-      message = error.message;
-      switch (error.type) {
-        case "INVALID_URL":
-          status = 400;
-          break;
-        case "PRIVATE_VIDEO":
-        case "AGE_RESTRICTED":
-        case "GEO_LOCKED":
-          status = 403;
-          break;
-        case "DELETED_VIDEO":
-          status = 404;
-          break;
-        case "RATE_LIMITED":
-          status = 429;
-          break;
-        case "TIMEOUT":
-          status = 504;
-          break;
-        default:
-          status = 500;
-      }
-    }
-
+    console.error("ZM API Extract Route Error:", error);
     return NextResponse.json(
-      { error: message, type: error.type || "UNKNOWN" },
-      { status }
+      {
+        success: false,
+        error: error.message || "Failed to process video link.",
+      },
+      { status: 500 }
     );
   }
 }
+
+/**
+ * POST /api/extract
+ * Accept JSON body: { url: string }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    return await processSocialMediaRequest(body?.url);
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Invalid JSON request body." },
+      { status: 400 }
+    );
+  }
+}
+
+/**
+ * GET /api/extract
+ * Accept Query Param: ?url=https://...
+ */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const url = searchParams.get("url") || searchParams.get("videoUrl");
+  return await processSocialMediaRequest(url);
+}
+

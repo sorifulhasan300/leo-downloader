@@ -17,6 +17,85 @@ function isValidUrl(urlString: string): boolean {
 }
 
 /**
+ * Helper to parse any raw size input (number of bytes, numeric string, or string formatted size like "15.4 MB")
+ */
+function parseMediaSize(media: any): number | string | null {
+  if (!media || typeof media !== "object") return null;
+
+  const rawVal =
+    media.data_size ??
+    media.size ??
+    media.filesize ??
+    media.file_size ??
+    media.bytes ??
+    media.formatted_size ??
+    media.content_length;
+
+  if (rawVal === null || rawVal === undefined || rawVal === "" || rawVal === "N/A") {
+    return null;
+  }
+
+  if (typeof rawVal === "number" && !isNaN(rawVal) && rawVal > 0) {
+    return rawVal;
+  }
+
+  if (typeof rawVal === "string") {
+    const trimmed = rawVal.trim();
+    if (/^\d+$/.test(trimmed)) {
+      return parseInt(trimmed, 10);
+    }
+    const match = trimmed.match(/^([\d.]+)\s*(gb|mb|kb|b)?$/i);
+    if (match) {
+      const val = parseFloat(match[1]);
+      const unit = (match[2] || "").toLowerCase();
+      if (!isNaN(val) && val > 0) {
+        if (unit === "gb") return Math.round(val * 1024 * 1024 * 1024);
+        if (unit === "mb") return Math.round(val * 1024 * 1024);
+        if (unit === "kb") return Math.round(val * 1024);
+        if (unit === "b") return Math.round(val);
+        if (val > 1000) return Math.round(val);
+        return Math.round(val * 1024 * 1024);
+      }
+    }
+    return trimmed;
+  }
+
+  return null;
+}
+
+/**
+ * Lightweight fetch fallback to retrieve Content-Length header for media missing size
+ */
+async function fetchContentLengthIfMissing(mediaUrl: string): Promise<number | null> {
+  if (!mediaUrl || typeof mediaUrl !== "string") return null;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
+
+    const res = await fetch(mediaUrl, {
+      method: "HEAD",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const len = res.headers.get("content-length");
+      if (len && /^\d+$/.test(len)) {
+        const bytes = parseInt(len, 10);
+        if (bytes > 0) return bytes;
+      }
+    }
+  } catch {
+    // Ignore error silently
+  }
+  return null;
+}
+
+/**
  * Helper to process social media download requests via ZM API.
  */
 async function processSocialMediaRequest(urlParam: unknown) {
@@ -83,31 +162,52 @@ async function processSocialMediaRequest(urlParam: unknown) {
       duration = parseFloat(apiResponse.duration) || 0;
     }
 
-    const medias = apiResponse.medias.map((media, index) => {
-      const extension = media.extension || (media.type === "audio" ? "mp3" : "mp4");
-      const quality = media.quality || (media.type === "audio" ? "Audio MP3" : "HD No Watermark");
-      const mediaType = media.type || (quality.toLowerCase().includes("audio") ? "audio" : "video");
-      const hasAudio = mediaType !== "video_only";
-      const hasVideo = mediaType !== "audio";
+    const rawMedias = apiResponse.medias;
 
-      return {
-        url: media.url,
-        quality,
-        extension,
-        type: mediaType,
-        width: media.width || null,
-        height: media.height || null,
-        data_size: media.data_size || null,
+    const medias = await Promise.all(
+      rawMedias.map(async (media, index) => {
+        const extension = media.extension || (media.type === "audio" ? "mp3" : "mp4");
+        let quality = media.quality || (media.type === "audio" ? "Audio MP3" : "HD No Watermark");
 
-        // Frontend compatibility properties
-        formatId: `media-${index}-${extension}`,
-        ext: extension,
-        filesize: media.data_size || null,
-        hasAudio,
-        hasVideo,
-        fps: null,
-      };
-    });
+        if (
+          quality.toLowerCase().includes("1080") ||
+          quality.toLowerCase().includes("full hd") ||
+          (media.height && media.height >= 1080)
+        ) {
+          if (!quality.toLowerCase().includes("full hd")) {
+            quality = "Full HD 1080p";
+          }
+        }
+
+        const mediaType = media.type || (quality.toLowerCase().includes("audio") ? "audio" : "video");
+        const hasAudio = mediaType !== "video_only";
+        const hasVideo = mediaType !== "audio";
+
+        let parsedSize = parseMediaSize(media);
+        if (parsedSize === null && media.url) {
+          parsedSize = await fetchContentLengthIfMissing(media.url);
+        }
+
+        return {
+          url: media.url,
+          quality,
+          extension,
+          type: mediaType,
+          width: media.width || null,
+          height: media.height || null,
+          data_size: parsedSize,
+          size: parsedSize,
+          filesize: parsedSize,
+
+          // Frontend compatibility properties
+          formatId: `media-${index}-${extension}`,
+          ext: extension,
+          hasAudio,
+          hasVideo,
+          fps: null,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -175,5 +275,3 @@ export async function GET(request: NextRequest) {
   const url = searchParams.get("url") || searchParams.get("videoUrl");
   return await processSocialMediaRequest(url);
 }
-
-

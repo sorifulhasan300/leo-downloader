@@ -250,9 +250,9 @@ export default function UrlForm({
         </div>
 
         {/* Supported Platforms Badges */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-zinc-500 font-medium">Supported:</span>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {platforms.slice(0, 5).map((p) => {
               const isActive = detectedPlatform === p.name;
               return (

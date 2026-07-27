@@ -41,18 +41,56 @@ export interface DownloaderProps {
 }
 
 /**
- * Helper to format raw byte counts into human-readable MB / KB strings.
+ * Helper to format raw byte counts or string size inputs into human-readable MB / KB strings.
  */
-function formatSizeInMB(bytes?: number | null): string {
-  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) {
+function formatSizeInMB(input?: number | string | null, rawMedia?: any): string {
+  let val: number | string | null = input ?? null;
+
+  if (val === null || val === undefined || val === "" || val === "N/A") {
+    if (rawMedia && typeof rawMedia === "object") {
+      val =
+        rawMedia.data_size ??
+        rawMedia.size ??
+        rawMedia.filesize ??
+        rawMedia.file_size ??
+        rawMedia.bytes ??
+        rawMedia.formatted_size ??
+        null;
+    }
+  }
+
+  if (val === null || val === undefined || val === "" || val === "N/A") {
     return "N/A";
   }
-  const mb = bytes / (1024 * 1024);
-  if (mb < 0.1) {
-    const kb = bytes / 1024;
-    return `${kb.toFixed(1)} KB`;
+
+  if (typeof val === "number") {
+    if (isNaN(val) || val <= 0) return "N/A";
+    const mb = val / (1024 * 1024);
+    if (mb < 0.1) {
+      return `${(val / 1024).toFixed(1)} KB`;
+    }
+    return `${mb.toFixed(1)} MB`;
   }
-  return `${mb.toFixed(1)} MB`;
+
+  if (typeof val === "string") {
+    const str = val.trim();
+    if (!str || str === "N/A") return "N/A";
+
+    if (/[a-zA-Z]/.test(str)) {
+      return str;
+    }
+
+    const num = Number(str);
+    if (!isNaN(num) && num > 0) {
+      const mb = num / (1024 * 1024);
+      if (mb < 0.1) {
+        return `${(num / 1024).toFixed(1)} KB`;
+      }
+      return `${mb.toFixed(1)} MB`;
+    }
+  }
+
+  return "N/A";
 }
 
 /**
@@ -151,11 +189,34 @@ function getMediaBadge(media: MediaItem) {
   const quality = (media.quality || "").toLowerCase();
   const type = (media.type || "").toLowerCase();
   const ext = (media.ext || media.extension || "mp4").toUpperCase();
+  const height = media.height || 0;
+  const width = media.width || 0;
 
   if (type === "audio" || quality.includes("audio") || ext === "MP3") {
     return {
       label: "Audio MP3",
       style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    };
+  }
+
+  if (
+    quality.includes("1080") ||
+    quality.includes("full hd") ||
+    quality.includes("fhd") ||
+    quality.includes("1080p") ||
+    height >= 1080 ||
+    width >= 1920
+  ) {
+    return {
+      label: `Full HD 1080p (${ext})`,
+      style: "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/40 font-extrabold shadow-sm",
+    };
+  }
+
+  if (quality.includes("720") || quality.includes("720p") || height >= 720 || (quality.includes("hd") && !quality.includes("sd"))) {
+    return {
+      label: `HD 720p (${ext})`,
+      style: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30 font-semibold",
     };
   }
 
@@ -177,13 +238,6 @@ function getMediaBadge(media: MediaItem) {
     return {
       label: "Watermark",
       style: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    };
-  }
-
-  if (quality.includes("1080") || quality.includes("hd")) {
-    return {
-      label: `HD ${ext}`,
-      style: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30 font-semibold",
     };
   }
 
@@ -281,18 +335,16 @@ export default function Downloader({
     }
   };
 
-  // Direct Download action handler
+  // Direct Download action handler via proxy endpoint
   const handleDirectDownload = (mediaUrl: string, formatTitle?: string) => {
     if (!mediaUrl) return;
     
-    // Trigger opening direct URL in a new tab / force download
+    const fileName = (formatTitle || "video.mp4").trim().replace(/[/\\?%*:|"<>]/g, "_");
+    const proxyUrl = `/api/download-file?fileUrl=${encodeURIComponent(mediaUrl)}&fileName=${encodeURIComponent(fileName)}`;
+
     const link = document.createElement("a");
-    link.href = mediaUrl;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    if (formatTitle) {
-      link.download = formatTitle;
-    }
+    link.href = proxyUrl;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

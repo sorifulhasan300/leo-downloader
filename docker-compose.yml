@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   downloader:
     build:
@@ -8,7 +10,13 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ./leo-downloader/.env
+      - .env.local   
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - ZM_API_BASE_URL=https://api.zm.io.vn/v1/social/autolink
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3    

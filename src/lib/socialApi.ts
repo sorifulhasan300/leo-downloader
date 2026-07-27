@@ -69,13 +69,18 @@ export async function fetchSocialMediaData(videoUrl: string): Promise<ApiRespons
   const baseUrl = process.env.ZM_API_BASE_URL || 'https://api.zm.io.vn/v1/social/autolink';
   const apiKey = process.env.ZM_API_KEY;
 
-  const requestUrl = `${baseUrl}?url=${encodeURIComponent(trimmedUrl)}`;
+  // Construct request URL including apikey query param if available
+  let requestUrl = `${baseUrl}?url=${encodeURIComponent(trimmedUrl)}`;
+  if (apiKey) {
+    requestUrl += `&apikey=${encodeURIComponent(apiKey)}`;
+  }
 
   const headers: Record<string, string> = {
     'Accept': 'application/json',
   };
 
   if (apiKey) {
+    headers['apikey'] = apiKey;
     headers['x-api-key'] = apiKey;
   }
 
@@ -94,7 +99,7 @@ export async function fetchSocialMediaData(videoUrl: string): Promise<ApiRespons
           errorMessage = errorData.message;
         }
       } catch {
-        // Fallback to text body or statusText
+        // Fallback to status text
       }
       throw new Error(`ZM API Request Failed: ${errorMessage}`);
     }

@@ -102,15 +102,13 @@ export default function Home() {
         {/* Subtle light effect behind hero */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[250px] bg-gradient-to-tr from-violet-600/10 to-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+        <h1 className="text-2xl sm:text-5xl md:text-2xl font-extrabold tracking-tight text-white leading-tight">
           Download Video & Audio{" "}
           <span className="bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
             From Any Site
           </span>
         </h1>
-        <p className="mt-5 text-sm sm:text-base md:text-lg text-zinc-400 leading-relaxed max-w-xl mx-auto">
-          High-performance media extractor. Save videos in high resolution or convert to MP3 instantly with zero restrictions.
-        </p>
+       
       </section>
 
       {/* Input Form Section */}

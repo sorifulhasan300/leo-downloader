@@ -1,36 +1,35 @@
-# 1. Base Image
-FROM node:20-slim AS base
-
-# Install Python 3, FFmpeg, curl, and yt-dlp directly
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    ffmpeg \
-    curl \
-    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod a+rx /usr/local/bin/yt-dlp \
-    && rm -rf /var/lib/apt/lists/*
+# 1. Base Image - Lightweight Node.js
+FROM node:20-alpine AS base
 
 WORKDIR /app
 
-# 2. Dependencies
+# 2. Dependencies - Install node modules
 FROM base AS deps
-COPY package.json package-lock.json* pnpm-lock.yaml* ./
-RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-lockfile; \
-    else npm ci; fi
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN \
+  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
-# 3. Builder
+# 3. Builder - Build the Next.js application
 FROM base AS builder
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm run build; \
-    else npm run build; fi
+RUN \
+  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  elif [ -f yarn.lock ]; then yarn build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
-# 4. Production Runner
+# 4. Production Runner - Minimal image size
 FROM base AS runner
 WORKDIR /app
 
@@ -38,9 +37,14 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3000
 

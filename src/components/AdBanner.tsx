@@ -114,7 +114,7 @@ export default function AdBanner({
               </h4>
               <p className="text-xs md:text-sm text-zinc-400 mt-1 leading-relaxed">
                 We keep LeoDownloader free by showing lightweight, safe ads. Please
-                consider whitelisting us, or unlock faster downloads with Premium.
+                consider whitelisting us to support our free platform.
               </p>
             </div>
           </div>
@@ -126,16 +126,6 @@ export default function AdBanner({
             >
               I've disabled it
             </button>
-            <a
-              href="#premium"
-              onClick={(e) => {
-                e.preventDefault();
-                alert("Premium checkout flow coming soon! Support us by disabling your adblocker in the meantime.");
-              }}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg active:scale-95 transition-all"
-            >
-              Go Premium
-            </a>
           </div>
         </div>
       </div>
@@ -243,7 +233,7 @@ export default function AdBanner({
               </a>
             </div>
           ) : (
-            /* Mock 300x250 or Responsive Box/CPM Conversion Banner */
+            /* Mock Responsive Box/CPM Sponsored Banner */
             <div className="w-full relative group overflow-hidden bg-gradient-to-br from-zinc-900/60 to-zinc-950/70 border border-zinc-800 rounded-2xl p-6 text-center shadow-lg transition-all duration-300 hover:border-zinc-700/80">
               <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-zinc-900 border-l border-b border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans">
                 Sponsored Ad
@@ -268,22 +258,11 @@ export default function AdBanner({
                   </svg>
                 </div>
                 <h5 className="font-extrabold text-white text-base">
-                  LeoDownloader Pro
+                  LeoDownloader Fast Server
                 </h5>
                 <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
-                  Tired of waiting? Get unlimited 4K downloads, parallel extractions,
-                  ad-free experience, and direct Google Drive export support.
+                  High-speed streaming downloader engine. Save HD videos, Reels, and audio directly to your device with zero limits.
                 </p>
-                <a
-                  href="#premium"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert("Premium check-out coming soon! Support us by sharing our platform in the meantime.");
-                  }}
-                  className="mt-2 w-full max-w-[240px] py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:opacity-90 text-white shadow-lg active:scale-95 transition-all"
-                >
-                  Unlock 4K Max Speed - $2.99
-                </a>
               </div>
             </div>
           )}

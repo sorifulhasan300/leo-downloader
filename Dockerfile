@@ -5,13 +5,8 @@ WORKDIR /app
 
 # 2. Dependencies - Install node modules
 FROM base AS deps
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+COPY package.json package-lock.json* .npmrc* ./
+RUN npm ci
 
 # 3. Builder - Build the Next.js application
 FROM base AS builder
@@ -22,12 +17,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  elif [ -f yarn.lock ]; then yarn build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN npm run build
 
 # 4. Production Runner - Minimal image size
 FROM base AS runner

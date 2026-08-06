@@ -1,79 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  cleanMediaUrl,
+  getRefererForUrl,
+  isValidUrl,
+  sanitizeFileName,
+  DEFAULT_BROWSER_USER_AGENT,
+} from "@/lib/mediaUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Helper to validate whether a string is a valid HTTP/HTTPS URL.
- */
-function isValidUrl(urlString: string): boolean {
-  try {
-    const parsed = new URL(urlString);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Sanitizes a filename to ensure safe header value and cross-browser support.
- */
-function sanitizeFileName(fileName?: string | null): string {
-  if (!fileName || !fileName.trim()) {
-    return "video.mp4";
-  }
-
-  // Strip control characters, slashes, and hazardous header characters
-  let cleanName = fileName
-    .trim()
-    .replace(/[/\\?%*:|"<>]/g, "_")
-    .replace(/\s+/g, "_")
-    .replace(/[^\x20-\x7E]/g, ""); // Remove non-ASCII chars for standard header safety
-
-  if (!cleanName || cleanName === "_") {
-    cleanName = "video.mp4";
-  }
-
-  // Ensure default extension if missing
-  if (!/\.[a-zA-Z0-9]+$/.test(cleanName)) {
-    cleanName += ".mp4";
-  }
-
-  return cleanName;
-}
-
-/**
  * Core handler to stream remote video binary content with attachment headers.
+ * Implements fallback direct redirect to original URL if proxy streaming fails.
  */
 async function handleProxyDownload(fileUrl: string | null | undefined, fileName: string | null | undefined) {
-  if (!fileUrl || typeof fileUrl !== "string" || !isValidUrl(fileUrl.trim())) {
+  const cleanUrl = cleanMediaUrl(fileUrl);
+
+  if (!cleanUrl || !isValidUrl(cleanUrl)) {
     return NextResponse.json(
       { success: false, error: "Invalid or missing 'fileUrl' parameter." },
       { status: 400 }
     );
   }
 
-  const cleanFileUrl = fileUrl.trim();
   const sanitizedFileName = sanitizeFileName(fileName);
+  const referer = getRefererForUrl(cleanUrl);
 
   try {
-    const remoteResponse = await fetch(cleanFileUrl, {
+    const remoteResponse = await fetch(cleanUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": DEFAULT_BROWSER_USER_AGENT,
         "Accept": "*/*",
-        "Accept-Encoding": "identity",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": referer,
+        "Sec-Fetch-Dest": "video",
+        "Sec-Fetch-Mode": "no-cors",
       },
+      redirect: "follow",
     });
 
     if (!remoteResponse.ok || !remoteResponse.body) {
-      console.error(`Proxy download fetch error [${remoteResponse.status}]: ${remoteResponse.statusText}`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to fetch video stream from remote source (Status ${remoteResponse.status}).`,
-        },
-        { status: remoteResponse.status || 502 }
+      console.warn(
+        `Proxy download fetch returned status [${remoteResponse.status}]. Fallback redirecting to origin CDN: ${cleanUrl}`
       );
+      // Redirect to direct CDN URL as fallback so browser download does not fail
+      return NextResponse.redirect(cleanUrl, 302);
     }
 
     const contentType = remoteResponse.headers.get("content-type") || "video/mp4";
@@ -99,14 +71,9 @@ async function handleProxyDownload(fileUrl: string | null | undefined, fileName:
       headers: responseHeaders,
     });
   } catch (error: any) {
-    console.error("Error in /api/download-file proxy route:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "An unexpected error occurred while proxying video stream.",
-      },
-      { status: 500 }
-    );
+    console.error("Error in /api/download-file proxy route, redirecting to origin URL:", error);
+    // On network or fetch error, fallback redirect to original CDN URL
+    return NextResponse.redirect(cleanUrl, 302);
   }
 }
 

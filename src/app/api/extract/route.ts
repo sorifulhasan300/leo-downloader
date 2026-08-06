@@ -1,99 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchSocialMediaData, ApiResponse } from "@/lib/socialApi";
+import {
+  cleanMediaUrl,
+  fetchContentLengthIfMissing,
+  isValidUrl,
+  parseMediaSize,
+} from "@/lib/mediaUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-/**
- * Validates whether a string is a valid HTTP/HTTPS URL.
- */
-function isValidUrl(urlString: string): boolean {
-  try {
-    const parsedUrl = new URL(urlString);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Helper to parse any raw size input (number of bytes, numeric string, or string formatted size like "15.4 MB")
- */
-function parseMediaSize(media: any): number | string | null {
-  if (!media || typeof media !== "object") return null;
-
-  const rawVal =
-    media.data_size ??
-    media.size ??
-    media.filesize ??
-    media.file_size ??
-    media.bytes ??
-    media.formatted_size ??
-    media.content_length;
-
-  if (rawVal === null || rawVal === undefined || rawVal === "" || rawVal === "N/A") {
-    return null;
-  }
-
-  if (typeof rawVal === "number" && !isNaN(rawVal) && rawVal > 0) {
-    return rawVal;
-  }
-
-  if (typeof rawVal === "string") {
-    const trimmed = rawVal.trim();
-    if (/^\d+$/.test(trimmed)) {
-      return parseInt(trimmed, 10);
-    }
-    const match = trimmed.match(/^([\d.]+)\s*(gb|mb|kb|b)?$/i);
-    if (match) {
-      const val = parseFloat(match[1]);
-      const unit = (match[2] || "").toLowerCase();
-      if (!isNaN(val) && val > 0) {
-        if (unit === "gb") return Math.round(val * 1024 * 1024 * 1024);
-        if (unit === "mb") return Math.round(val * 1024 * 1024);
-        if (unit === "kb") return Math.round(val * 1024);
-        if (unit === "b") return Math.round(val);
-        if (val > 1000) return Math.round(val);
-        return Math.round(val * 1024 * 1024);
-      }
-    }
-    return trimmed;
-  }
-
-  return null;
-}
-
-/**
- * Lightweight fetch fallback to retrieve Content-Length header for media missing size
- */
-async function fetchContentLengthIfMissing(mediaUrl: string): Promise<number | null> {
-  if (!mediaUrl || typeof mediaUrl !== "string") return null;
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1800);
-
-    const res = await fetch(mediaUrl, {
-      method: "HEAD",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "*/*",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const len = res.headers.get("content-length");
-      if (len && /^\d+$/.test(len)) {
-        const bytes = parseInt(len, 10);
-        if (bytes > 0) return bytes;
-      }
-    }
-  } catch {
-    // Ignore error silently
-  }
-  return null;
-}
 
 /**
  * Helper to process social media extract/download requests via ZM API.
@@ -152,7 +67,7 @@ async function processSocialMediaRequest(urlParam: unknown) {
       author = apiResponse.author.name || apiResponse.author.username || "";
     }
 
-    const thumbnail = apiResponse.thumbnail || "";
+    const thumbnail = cleanMediaUrl(apiResponse.thumbnail || "");
     const source = apiResponse.source || trimmedUrl;
 
     let duration: number = 0;
@@ -167,6 +82,7 @@ async function processSocialMediaRequest(urlParam: unknown) {
 
     const medias = await Promise.all(
       rawMedias.map(async (media, index) => {
+        const mediaUrl = cleanMediaUrl(media.url);
         const extension = media.extension || (media.type === "audio" ? "mp3" : "mp4");
         let quality = media.quality || (media.type === "audio" ? "Audio MP3" : "HD No Watermark");
 
@@ -187,12 +103,12 @@ async function processSocialMediaRequest(urlParam: unknown) {
 
         // Extract or fetch file size
         let parsedSize = parseMediaSize(media);
-        if (parsedSize === null && media.url) {
-          parsedSize = await fetchContentLengthIfMissing(media.url);
+        if (parsedSize === null && mediaUrl) {
+          parsedSize = await fetchContentLengthIfMissing(mediaUrl);
         }
 
         return {
-          url: media.url,
+          url: mediaUrl,
           quality,
           extension,
           type: mediaType,

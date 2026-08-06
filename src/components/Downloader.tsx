@@ -116,7 +116,7 @@ function getPlatformInfo(sourceOrUrl?: string) {
     return {
       name: "TikTok",
       bgColor: "bg-pink-500/10",
-      textColor: "text-pink-400",
+      textColor: "text-pink-600 dark:text-pink-400",
       borderColor: "border-pink-500/30",
       badgeGradient: "from-pink-500 to-rose-500",
       icon: (
@@ -130,7 +130,7 @@ function getPlatformInfo(sourceOrUrl?: string) {
     return {
       name: "Facebook",
       bgColor: "bg-blue-500/10",
-      textColor: "text-blue-400",
+      textColor: "text-blue-600 dark:text-blue-400",
       borderColor: "border-blue-500/30",
       badgeGradient: "from-blue-600 to-cyan-600",
       icon: (
@@ -144,7 +144,7 @@ function getPlatformInfo(sourceOrUrl?: string) {
     return {
       name: "Instagram",
       bgColor: "bg-purple-500/10",
-      textColor: "text-purple-400",
+      textColor: "text-purple-600 dark:text-purple-400",
       borderColor: "border-purple-500/30",
       badgeGradient: "from-purple-600 via-pink-600 to-amber-500",
       icon: (
@@ -158,7 +158,7 @@ function getPlatformInfo(sourceOrUrl?: string) {
     return {
       name: "YouTube",
       bgColor: "bg-red-500/10",
-      textColor: "text-red-400",
+      textColor: "text-red-600 dark:text-red-400",
       borderColor: "border-red-500/30",
       badgeGradient: "from-red-600 to-rose-600",
       icon: (
@@ -171,7 +171,7 @@ function getPlatformInfo(sourceOrUrl?: string) {
   return {
     name: "Social Media",
     bgColor: "bg-indigo-500/10",
-    textColor: "text-indigo-400",
+    textColor: "text-indigo-600 dark:text-indigo-400",
     borderColor: "border-indigo-500/30",
     badgeGradient: "from-violet-600 to-indigo-600",
     icon: (
@@ -195,7 +195,7 @@ function getMediaBadge(media: MediaItem) {
   if (type === "audio" || quality.includes("audio") || ext === "MP3") {
     return {
       label: "Audio MP3",
-      style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      style: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
     };
   }
 
@@ -209,41 +209,41 @@ function getMediaBadge(media: MediaItem) {
   ) {
     return {
       label: `Full HD 1080p (${ext})`,
-      style: "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/40 font-extrabold shadow-sm",
+      style: "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/40 font-extrabold shadow-sm",
     };
   }
 
   if (quality.includes("720") || quality.includes("720p") || height >= 720 || (quality.includes("hd") && !quality.includes("sd"))) {
     return {
       label: `HD 720p (${ext})`,
-      style: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30 font-semibold",
+      style: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-semibold",
     };
   }
 
   if (quality.includes("hd_no_watermark") || (quality.includes("hd") && quality.includes("no_watermark"))) {
     return {
       label: "HD MP4 (No Watermark)",
-      style: "bg-purple-500/15 text-purple-300 border-purple-500/40 font-semibold shadow-purple-500/10",
+      style: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/40 font-semibold shadow-purple-500/10",
     };
   }
 
   if (quality.includes("no_watermark") || quality === "nowatermark") {
     return {
       label: "No Watermark",
-      style: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30 font-medium",
+      style: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-medium",
     };
   }
 
   if (quality.includes("watermark")) {
     return {
       label: "Watermark",
-      style: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      style: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
     };
   }
 
   return {
     label: media.quality || `${ext} Media`,
-    style: "bg-zinc-800 text-zinc-300 border-zinc-700/50",
+    style: "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700/50",
   };
 }
 
@@ -371,12 +371,12 @@ export default function Downloader({
         className="relative group w-full"
       >
         {/* Glow effect background */}
-        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 opacity-25 blur transition duration-700 group-focus-within:opacity-50 group-hover:opacity-40" />
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 opacity-20 dark:opacity-25 blur transition duration-700 group-focus-within:opacity-50 group-hover:opacity-40" />
 
-        <div className="relative flex flex-col sm:flex-row items-center gap-2.5 p-2 bg-zinc-900/90 backdrop-blur-xl border border-zinc-800/90 rounded-2xl shadow-2xl">
+        <div className="relative flex flex-col sm:flex-row items-center gap-2.5 p-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/90 dark:border-zinc-800/90 rounded-2xl shadow-xl shadow-zinc-200/50 dark:shadow-2xl transition-colors duration-300">
           {/* Input field & paste / clear action */}
           <div className="relative flex-1 flex items-center w-full">
-            <div className="pl-4 text-zinc-400">
+            <div className="pl-4 text-zinc-400 dark:text-zinc-500">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
               </svg>
@@ -390,7 +390,7 @@ export default function Downloader({
               onChange={(e) => setUrl(e.target.value)}
               placeholder={placeholder}
               disabled={isLoading}
-              className="w-full px-3 py-3.5 bg-transparent text-white placeholder-zinc-500 text-sm md:text-base border-none outline-none focus:ring-0 disabled:opacity-50"
+              className="w-full px-3 py-3.5 bg-transparent text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 text-sm md:text-base border-none outline-none focus:ring-0 disabled:opacity-50"
             />
 
             {/* Clear input button */}
@@ -403,7 +403,7 @@ export default function Downloader({
                   setError(null);
                   if (inputRef.current) inputRef.current.focus();
                 }}
-                className="p-1.5 mr-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors shrink-0"
+                className="p-1.5 mr-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors shrink-0"
                 title="Clear input"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -417,7 +417,7 @@ export default function Downloader({
               <button
                 type="button"
                 onClick={handlePaste}
-                className="flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition duration-200 shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/60 transition duration-200 shrink-0"
                 title="Paste URL from clipboard & trigger download"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -436,7 +436,7 @@ export default function Downloader({
             className={`w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm md:text-base tracking-wide transition-all duration-300 shadow-lg ${
               url.trim() && !isLoading
                 ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white cursor-pointer active:scale-95 shadow-indigo-500/25"
-                : "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/30"
+                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed border border-zinc-200 dark:border-zinc-700/30"
             }`}
           >
             {isLoading ? (
@@ -461,19 +461,19 @@ export default function Downloader({
 
       {/* 2. ERROR STATE ALERT */}
       {error && (
-        <div className="p-4.5 rounded-2xl bg-red-500/10 border border-red-500/25 backdrop-blur-md text-red-200 text-sm flex items-start gap-3.5 shadow-xl animate-fadeIn">
-          <div className="p-2 rounded-xl bg-red-500/20 text-red-400 shrink-0">
+        <div className="p-4.5 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 backdrop-blur-md text-red-800 dark:text-red-200 text-sm flex items-start gap-3.5 shadow-xl animate-fadeIn">
+          <div className="p-2 rounded-xl bg-red-500/20 text-red-500 dark:text-red-400 shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="font-bold text-red-300 text-base">Extraction Failed</h4>
-            <p className="mt-1 text-red-300/90 leading-relaxed text-xs md:text-sm">{error}</p>
+            <h4 className="font-bold text-red-800 dark:text-red-300 text-base">Extraction Failed</h4>
+            <p className="mt-1 text-red-600 dark:text-red-300/90 leading-relaxed text-xs md:text-sm">{error}</p>
           </div>
           <button
             onClick={() => setError(null)}
-            className="p-1 rounded-lg text-red-400 hover:text-white hover:bg-red-500/20 transition-colors"
+            className="p-1 rounded-lg text-red-500 dark:text-red-400 hover:text-red-800 dark:hover:text-white hover:bg-red-500/20 transition-colors"
             title="Dismiss alert"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -485,26 +485,26 @@ export default function Downloader({
 
       {/* 2. LOADING STATE SKELETON */}
       {isLoading && (
-        <div className="w-full bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-5 md:p-6 shadow-2xl animate-pulse flex flex-col gap-6">
-          <div className="flex flex-col md:flex-row gap-5 pb-6 border-b border-zinc-800/60">
-            <div className="w-full md:w-64 aspect-video rounded-xl bg-zinc-800 shrink-0" />
+        <div className="w-full bg-white/80 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 shadow-xl animate-pulse flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row gap-5 pb-6 border-b border-zinc-200 dark:border-zinc-800/60">
+            <div className="w-full md:w-64 aspect-video rounded-xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <div className="flex-1 flex flex-col justify-between py-1 gap-3">
               <div className="space-y-2">
-                <div className="h-6 bg-zinc-800 rounded-md w-4/5" />
-                <div className="h-4 bg-zinc-800 rounded-md w-2/5" />
+                <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-md w-4/5" />
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-md w-2/5" />
               </div>
               <div className="flex gap-3">
-                <div className="h-6 bg-zinc-800 rounded-full w-24" />
-                <div className="h-6 bg-zinc-800 rounded-full w-20" />
+                <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full w-24" />
+                <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full w-20" />
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            <div className="h-4 bg-zinc-800 rounded-md w-40" />
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-2 space-y-2">
-              <div className="h-12 bg-zinc-900 rounded-lg w-full" />
-              <div className="h-12 bg-zinc-900 rounded-lg w-full" />
-              <div className="h-12 bg-zinc-900 rounded-lg w-full" />
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-md w-40" />
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-950/50 p-2 space-y-2">
+              <div className="h-12 bg-zinc-200/80 dark:bg-zinc-900 rounded-lg w-full" />
+              <div className="h-12 bg-zinc-200/80 dark:bg-zinc-900 rounded-lg w-full" />
+              <div className="h-12 bg-zinc-200/80 dark:bg-zinc-900 rounded-lg w-full" />
             </div>
           </div>
         </div>
@@ -512,12 +512,12 @@ export default function Downloader({
 
       {/* 3. MEDIA CARD RENDERING */}
       {result && !isLoading && (
-        <div className="w-full bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/90 rounded-2xl p-5 md:p-7 shadow-2xl animate-fadeIn">
+        <div className="w-full bg-white/90 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200/90 dark:border-zinc-800/90 rounded-2xl p-5 md:p-7 shadow-xl shadow-zinc-200/50 dark:shadow-2xl animate-fadeIn transition-colors duration-300">
           
           {/* Metadata Card Header */}
-          <div className="flex flex-col md:flex-row gap-6 pb-6 border-b border-zinc-800/80">
+          <div className="flex flex-col md:flex-row gap-6 pb-6 border-b border-zinc-200/80 dark:border-zinc-800/80">
             {/* Thumbnail */}
-            <div className="relative group shrink-0 w-full md:w-64 aspect-video rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800/80 shadow-lg">
+            <div className="relative group shrink-0 w-full md:w-64 aspect-video rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 shadow-lg">
               {result.thumbnail ? (
                 <img
                   src={result.thumbnail}
@@ -526,7 +526,7 @@ export default function Downloader({
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-zinc-900">
+                <div className="w-full h-full flex items-center justify-center text-zinc-400 dark:text-zinc-600 bg-zinc-100 dark:bg-zinc-900">
                   <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
                   </svg>
@@ -555,14 +555,14 @@ export default function Downloader({
                 </div>
 
                 {/* Video Title */}
-                <h2 className="text-lg md:text-xl font-extrabold text-white leading-snug tracking-tight line-clamp-2">
+                <h2 className="text-lg md:text-xl font-extrabold text-zinc-900 dark:text-white leading-snug tracking-tight line-clamp-2">
                   {result.title}
                 </h2>
 
                 {/* Author / Username */}
                 {result.author && (
-                  <div className="mt-2.5 flex items-center gap-2 text-xs md:text-sm text-zinc-400">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/50 text-zinc-200 font-medium">
+                  <div className="mt-2.5 flex items-center gap-2 text-xs md:text-sm text-zinc-600 dark:text-zinc-400">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-200 font-medium">
                       <svg className="w-3.5 h-3.5 text-zinc-400" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                       </svg>
@@ -574,12 +574,12 @@ export default function Downloader({
 
               {/* Source link badge */}
               {result.source && (
-                <div className="mt-4 pt-3 border-t border-zinc-800/50">
+                <div className="mt-4 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/50">
                   <a
                     href={result.source}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
                   >
                     <span>View original post</span>
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -594,8 +594,8 @@ export default function Downloader({
           {/* 3. MEDIA OPTIONS LIST */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-                <svg className="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-2">
+                <svg className="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
                 Available Media Options ({result.medias.length})
@@ -603,24 +603,24 @@ export default function Downloader({
             </div>
 
             {/* Media Items Table / Grid */}
-            <div className="overflow-x-auto rounded-xl border border-zinc-800/80 bg-zinc-950/60 shadow-inner">
+            <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/60 shadow-inner">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-800/80 bg-zinc-900/60 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-100/80 dark:bg-zinc-900/60 text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                     <th className="px-4 py-3">Format / Quality</th>
                     <th className="px-4 py-3">File Size</th>
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3 text-right">Download Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-sm">
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60 text-sm">
                   {result.medias.map((media, idx) => {
                     const badge = getMediaBadge(media);
                     const sizeInMB = formatSizeInMB(media.data_size || media.filesize);
                     const ext = (media.extension || media.ext || (media.type === "audio" ? "mp3" : "mp4")).toUpperCase();
 
                     return (
-                      <tr key={idx} className="hover:bg-zinc-900/40 transition-colors group">
+                      <tr key={idx} className="hover:bg-zinc-100/60 dark:hover:bg-zinc-900/40 transition-colors group">
                         
                         {/* Quality Badge */}
                         <td className="px-4 py-3.5">
@@ -630,13 +630,13 @@ export default function Downloader({
                         </td>
 
                         {/* File Size in MB */}
-                        <td className="px-4 py-3.5 text-zinc-300 font-mono text-xs font-medium">
+                        <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300 font-mono text-xs font-medium">
                           {sizeInMB}
                         </td>
 
                         {/* Format Extension */}
                         <td className="px-4 py-3.5">
-                          <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-xs uppercase border border-zinc-700/50">
+                          <span className="px-2 py-0.5 rounded bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 font-mono text-xs uppercase border border-zinc-300 dark:border-zinc-700/50">
                             {ext}
                           </span>
                         </td>
@@ -649,11 +649,11 @@ export default function Downloader({
                             <button
                               type="button"
                               onClick={() => handleCopyLink(media.url)}
-                              className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                              className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                               title="Copy direct download link"
                             >
                               {copiedUrl === media.url ? (
-                                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                 </svg>
                               ) : (

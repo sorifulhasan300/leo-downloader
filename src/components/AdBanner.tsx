@@ -57,8 +57,8 @@ export default function AdBanner({
           return;
         }
 
-        // Secondary check: Attempt to fetch a common ad script URL (will fail if network-level blocker is active)
-        const response = await fetch(
+        // Secondary check: Attempt to fetch a common ad script URL
+        await fetch(
           "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
           { method: "HEAD", mode: "no-cors", cache: "no-store" }
         );
@@ -75,11 +75,11 @@ export default function AdBanner({
   if (!isMounted) {
     return (
       <div
-        className={`w-full flex items-center justify-center bg-zinc-950/20 border border-zinc-800/40 rounded-2xl animate-pulse ${
+        className={`w-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-800/40 rounded-2xl animate-pulse ${
           format === "728x90" ? "min-h-[90px]" : "min-h-[250px]"
         }`}
       >
-        <span className="text-xs text-zinc-600">Loading ad space...</span>
+        <span className="text-xs text-zinc-400 dark:text-zinc-600">Loading ad space...</span>
       </div>
     );
   }
@@ -87,12 +87,12 @@ export default function AdBanner({
   // Fallback view when uBlock or another AdBlocker is active
   if (isBlocked) {
     return (
-      <div className="w-full relative group overflow-hidden bg-gradient-to-br from-zinc-900/90 to-zinc-950/90 border border-red-500/20 rounded-2xl p-6 md:p-8 text-center shadow-2xl transition duration-500 hover:border-red-500/30">
+      <div className="w-full relative group overflow-hidden bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/90 dark:to-zinc-950/90 border border-red-500/20 rounded-2xl p-6 md:p-8 text-center shadow-lg dark:shadow-2xl transition duration-500 hover:border-red-500/30">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[150px] bg-red-500/5 rounded-full blur-[80px] pointer-events-none"></div>
 
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 text-left max-w-xl">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 dark:text-red-400 shrink-0">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -109,10 +109,10 @@ export default function AdBanner({
               </svg>
             </div>
             <div>
-              <h4 className="font-bold text-zinc-200 text-sm md:text-base">
+              <h4 className="font-bold text-zinc-900 dark:text-zinc-200 text-sm md:text-base">
                 Ad Blocker Detected
               </h4>
-              <p className="text-xs md:text-sm text-zinc-400 mt-1 leading-relaxed">
+              <p className="text-xs md:text-sm text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
                 We keep LeoDownloader free by showing lightweight, safe ads. Please
                 consider whitelisting us to support our free platform.
               </p>
@@ -122,7 +122,7 @@ export default function AdBanner({
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 active:scale-95 transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:border-zinc-700 active:scale-95 transition-all"
             >
               I've disabled it
             </button>
@@ -191,8 +191,8 @@ export default function AdBanner({
         <div className="w-full">
           {format === "728x90" ? (
             /* Mock 728x90 Horizontal Desktop Banner */
-            <div className="w-full min-h-[90px] relative group overflow-hidden bg-gradient-to-r from-violet-600/5 via-indigo-600/5 to-cyan-500/5 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-lg transition-all duration-300 hover:border-zinc-700/80">
-              <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-zinc-900 border-l border-b border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans">
+            <div className="w-full min-h-[90px] relative group overflow-hidden bg-gradient-to-r from-violet-600/5 via-indigo-600/5 to-cyan-500/5 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-md dark:shadow-lg transition-all duration-300 hover:border-zinc-300 dark:hover:border-zinc-700/80">
+              <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-zinc-100 dark:bg-zinc-900 border-l border-b border-zinc-200 dark:border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans">
                 Sponsored Ad
               </div>
               <div className="flex items-center gap-4">
@@ -213,10 +213,10 @@ export default function AdBanner({
                   </svg>
                 </div>
                 <div className="text-left">
-                  <h5 className="font-bold text-zinc-200 text-sm">
+                  <h5 className="font-bold text-zinc-900 dark:text-zinc-200 text-sm">
                     LeoConvert - Convert Media Faster
                   </h5>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                     Convert any downloaded video to MP4, AVI, WEBM, or MP3 with high-bitrate conversion options.
                   </p>
                 </div>
@@ -227,15 +227,15 @@ export default function AdBanner({
                   e.preventDefault();
                   alert("LeoConvert coming soon!");
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white hover:bg-zinc-800 active:scale-95 transition-all shrink-0"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0"
               >
                 Learn More
               </a>
             </div>
           ) : (
             /* Mock Responsive Box/CPM Sponsored Banner */
-            <div className="w-full relative group overflow-hidden bg-gradient-to-br from-zinc-900/60 to-zinc-950/70 border border-zinc-800 rounded-2xl p-6 text-center shadow-lg transition-all duration-300 hover:border-zinc-700/80">
-              <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-zinc-900 border-l border-b border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans">
+            <div className="w-full relative group overflow-hidden bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900/60 dark:to-zinc-950/70 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 text-center shadow-md dark:shadow-lg transition-all duration-300 hover:border-zinc-300 dark:hover:border-zinc-700/80">
+              <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-zinc-100 dark:bg-zinc-900 border-l border-b border-zinc-200 dark:border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500 font-semibold font-sans">
                 Sponsored Ad
               </div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[120px] bg-indigo-600/5 rounded-full blur-[60px] pointer-events-none"></div>
@@ -257,10 +257,10 @@ export default function AdBanner({
                     />
                   </svg>
                 </div>
-                <h5 className="font-extrabold text-white text-base">
+                <h5 className="font-extrabold text-zinc-900 dark:text-white text-base">
                   LeoDownloader Fast Server
                 </h5>
-                <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-sm">
                   High-speed streaming downloader engine. Save HD videos, Reels, and audio directly to your device with zero limits.
                 </p>
               </div>

@@ -102,13 +102,13 @@ export default function PlatformDownloaderClient({
       {/* Hero Header */}
       <section className="relative text-center max-w-3xl mx-auto">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[250px] bg-gradient-to-tr from-indigo-600/10 to-violet-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
           {title}{" "}
-          <span className="bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 dark:from-violet-400 dark:via-indigo-400 dark:to-cyan-400 bg-clip-text text-transparent">
             Without Limits
           </span>
         </h1>
-        <p className="mt-5 text-sm sm:text-base md:text-lg text-zinc-400 leading-relaxed max-w-xl mx-auto">
+        <p className="mt-5 text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl mx-auto">
           {subtitle}
         </p>
       </section>
@@ -137,12 +137,12 @@ export default function PlatformDownloaderClient({
       )}
 
       {/* How to Download Steps */}
-      <section className="w-full pt-8 border-t border-zinc-900">
+      <section className="w-full pt-8 border-t border-zinc-200 dark:border-zinc-900">
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-white">
             How to Download {platformName} Videos
           </h2>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Follow these three simple steps to download media on your phone, tablet, or desktop.
           </p>
         </div>
@@ -151,28 +151,28 @@ export default function PlatformDownloaderClient({
           {howToSteps.map((step, idx) => (
             <div
               key={idx}
-              className="relative p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800/60 flex flex-col gap-3 hover:border-zinc-700/60 transition-all duration-300 group"
+              className="relative p-6 rounded-2xl bg-white dark:bg-zinc-900/30 border border-zinc-200/80 dark:border-zinc-800/60 shadow-lg shadow-zinc-200/50 dark:shadow-none flex flex-col gap-3 hover:border-zinc-300 dark:hover:border-zinc-700/60 transition-all duration-300 group"
             >
-              <div className="absolute top-4 right-4 text-3xl font-extrabold text-zinc-800/50 group-hover:text-violet-500/10 transition-colors">
+              <div className="absolute top-4 right-4 text-3xl font-extrabold text-zinc-200 dark:text-zinc-800/50 group-hover:text-violet-500/20 dark:group-hover:text-violet-500/10 transition-colors">
                 {step.step}
               </div>
-              <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
+              <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400 font-bold">
                 {idx + 1}
               </div>
-              <h3 className="font-bold text-lg text-zinc-100 mt-2">{step.title}</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">{step.description}</p>
+              <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mt-2">{step.title}</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">{step.description}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Dynamic Features List */}
-      <section className="w-full pt-8 border-t border-zinc-900">
+      <section className="w-full pt-8 border-t border-zinc-200 dark:border-zinc-900">
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-white">
             Key Features of our {platformName} Downloader
           </h2>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Why LeoDownloader is the best choice for saving your favorite online content.
           </p>
         </div>
@@ -181,13 +181,13 @@ export default function PlatformDownloaderClient({
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/50 flex flex-col gap-3"
+              className="p-5 rounded-2xl bg-white dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/50 shadow-md shadow-zinc-200/40 dark:shadow-none flex flex-col gap-3"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 {feature.icon}
               </div>
-              <h3 className="font-bold text-base text-zinc-100">{feature.title}</h3>
-              <p className="text-xs md:text-sm text-zinc-400 leading-relaxed">
+              <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">{feature.title}</h3>
+              <p className="text-xs md:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 {feature.description}
               </p>
             </div>
@@ -196,13 +196,13 @@ export default function PlatformDownloaderClient({
       </section>
 
       {/* Accordion FAQ Section */}
-      <section className="w-full pt-8 border-t border-zinc-900">
+      <section className="w-full pt-8 border-t border-zinc-200 dark:border-zinc-900">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">
               Frequently Asked Questions
             </h2>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Find answers to the most common questions regarding {platformName} downloading.
             </p>
           </div>
@@ -213,14 +213,14 @@ export default function PlatformDownloaderClient({
               return (
                 <div
                   key={index}
-                  className="rounded-xl border border-zinc-800/80 bg-zinc-900/20 overflow-hidden transition-all duration-300"
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/20 overflow-hidden shadow-sm dark:shadow-none transition-all duration-300"
                 >
                   <button
                     onClick={() => toggleFaq(index)}
-                    className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 font-semibold text-zinc-200 hover:text-white hover:bg-zinc-800/20 transition-colors"
+                    className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors"
                   >
                     <span className="text-sm md:text-base">{faq.question}</span>
-                    <span className="text-zinc-500 shrink-0">
+                    <span className="text-zinc-400 dark:text-zinc-500 shrink-0">
                       {isOpen ? (
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                           <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
@@ -233,7 +233,7 @@ export default function PlatformDownloaderClient({
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-4 text-xs md:text-sm text-zinc-400 leading-relaxed border-t border-zinc-800/40 pt-3 animate-slideDown">
+                    <div className="px-5 pb-4 text-xs md:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed border-t border-zinc-200 dark:border-zinc-800/40 pt-3 animate-slideDown">
                       {faq.answer}
                     </div>
                   )}

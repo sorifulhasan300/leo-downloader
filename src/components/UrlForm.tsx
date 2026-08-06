@@ -44,13 +44,13 @@ export default function UrlForm({
 
   // Platform detection regexes
   const platforms = [
-    { name: "youtube", regex: /(youtube\.com|youtu\.be|youtube-nocookie\.com)/i, color: "text-red-500 bg-red-500/10 border-red-500/20" },
-    { name: "tiktok", regex: /tiktok\.com/i, color: "text-pink-500 bg-pink-500/10 border-pink-500/20" },
-    { name: "instagram", regex: /instagram\.com/i, color: "text-purple-500 bg-purple-500/10 border-purple-500/20" },
-    { name: "twitter", regex: /(twitter\.com|x\.com)/i, color: "text-sky-400 bg-sky-400/10 border-sky-400/20" },
-    { name: "facebook", regex: /(facebook\.com|fb\.watch)/i, color: "text-blue-600 bg-blue-600/10 border-blue-600/20" },
-    { name: "vimeo", regex: /vimeo\.com/i, color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20" },
-    { name: "twitch", regex: /twitch\.tv/i, color: "text-violet-500 bg-violet-500/10 border-violet-500/20" },
+    { name: "youtube", regex: /(youtube\.com|youtu\.be|youtube-nocookie\.com)/i, color: "text-red-600 dark:text-red-500 bg-red-500/10 border-red-500/30" },
+    { name: "tiktok", regex: /tiktok\.com/i, color: "text-pink-600 dark:text-pink-500 bg-pink-500/10 border-pink-500/30" },
+    { name: "instagram", regex: /instagram\.com/i, color: "text-purple-600 dark:text-purple-500 bg-purple-500/10 border-purple-500/30" },
+    { name: "twitter", regex: /(twitter\.com|x\.com)/i, color: "text-sky-600 dark:text-sky-400 bg-sky-400/10 border-sky-400/30" },
+    { name: "facebook", regex: /(facebook\.com|fb\.watch)/i, color: "text-blue-600 dark:text-blue-500 bg-blue-500/10 border-blue-500/30" },
+    { name: "vimeo", regex: /vimeo\.com/i, color: "text-cyan-600 dark:text-cyan-400 bg-cyan-400/10 border-cyan-400/30" },
+    { name: "twitch", regex: /twitch\.tv/i, color: "text-violet-600 dark:text-violet-500 bg-violet-500/10 border-violet-500/30" },
   ];
 
   useEffect(() => {
@@ -103,12 +103,12 @@ export default function UrlForm({
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative group">
         {/* Outer glowing border animation on focus */}
-        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 opacity-25 blur transition duration-1000 group-focus-within:opacity-50 group-hover:opacity-40 group-focus-within:duration-200"></div>
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 opacity-20 dark:opacity-25 blur transition duration-1000 group-focus-within:opacity-50 group-hover:opacity-40 group-focus-within:duration-200"></div>
 
-        <div className="relative flex flex-col md:flex-row gap-3 p-2 bg-zinc-900/90 backdrop-blur-xl border border-zinc-800/80 rounded-2xl shadow-2xl">
+        <div className="relative flex flex-col md:flex-row gap-3 p-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/90 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-200/50 dark:shadow-2xl transition-colors duration-300">
           <div className="relative flex-1 flex items-center">
             {/* Link SVG Icon */}
-            <div className="pl-4 text-zinc-500">
+            <div className="pl-4 text-zinc-400 dark:text-zinc-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -133,7 +133,7 @@ export default function UrlForm({
               onChange={(e) => setUrl(e.target.value)}
               placeholder={placeholder}
               disabled={isLoading}
-              className="w-full px-3 py-3.5 bg-transparent text-white placeholder-zinc-500 text-sm md:text-base border-none outline-none focus:ring-0 focus:outline-none disabled:opacity-50"
+              className="w-full px-3 py-3.5 bg-transparent text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 text-sm md:text-base border-none outline-none focus:ring-0 focus:outline-none disabled:opacity-50"
             />
 
             {/* Clear Button */}
@@ -141,7 +141,7 @@ export default function UrlForm({
               <button
                 type="button"
                 onClick={handleClear}
-                className="p-1.5 mr-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors"
+                className="p-1.5 mr-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
                 title="Clear input"
               >
                 <svg
@@ -162,7 +162,7 @@ export default function UrlForm({
               <button
                 type="button"
                 onClick={handlePaste}
-                className="flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/50 transition duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/50 transition duration-200"
                 title="Paste from clipboard"
               >
                 <svg
@@ -191,7 +191,7 @@ export default function UrlForm({
             className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm md:text-base tracking-wide transition-all duration-300 shadow-lg ${
               isValid && !isLoading
                 ? "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white cursor-pointer active:scale-95 shadow-indigo-500/20"
-                : "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/30"
+                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed border border-zinc-200 dark:border-zinc-700/30"
             }`}
           >
             {isLoading ? (
@@ -230,7 +230,7 @@ export default function UrlForm({
         {/* Dynamic Platform Notification */}
         <div>
           {url && !isValid && (
-            <span className="text-red-400 flex items-center gap-1.5 animate-pulse">
+            <span className="text-red-500 dark:text-red-400 flex items-center gap-1.5 animate-pulse font-medium">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
               </svg>
@@ -238,7 +238,7 @@ export default function UrlForm({
             </span>
           )}
           {url && isValid && detectedPlatform && (
-            <span className="text-emerald-400 flex items-center gap-1.5">
+            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
@@ -251,7 +251,7 @@ export default function UrlForm({
 
         {/* Supported Platforms Badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-zinc-500 font-medium">Supported:</span>
+          <span className="text-zinc-500 dark:text-zinc-400 font-medium">Supported:</span>
           <div className="flex flex-wrap gap-1.5">
             {platforms.slice(0, 5).map((p) => {
               const isActive = detectedPlatform === p.name;
@@ -260,8 +260,8 @@ export default function UrlForm({
                   key={p.name}
                   className={`px-2 py-0.5 rounded border capitalize transition-all duration-300 ${
                     isActive
-                      ? p.color + " font-semibold scale-110 shadow-lg"
-                      : "text-zinc-500 bg-zinc-900/30 border-zinc-800/40"
+                      ? p.color + " font-semibold scale-105 shadow-md"
+                      : "text-zinc-500 dark:text-zinc-400 bg-zinc-100/70 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800/40"
                   }`}
                 >
                   {p.name}
@@ -271,8 +271,8 @@ export default function UrlForm({
             <span
               className={`px-2 py-0.5 rounded border transition-all duration-300 ${
                 detectedPlatform === "other"
-                  ? "text-purple-400 bg-purple-500/10 border-purple-500/20 font-semibold scale-110 shadow-lg"
-                  : "text-zinc-500 bg-zinc-900/30 border-zinc-800/40"
+                  ? "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30 font-semibold scale-105 shadow-md"
+                  : "text-zinc-500 dark:text-zinc-400 bg-zinc-100/70 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800/40"
               }`}
               title="Plus 1000+ other websites supported by yt-dlp"
             >
@@ -284,14 +284,14 @@ export default function UrlForm({
 
       {/* Error Message display */}
       {error && (
-        <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm flex gap-3 shadow-lg animate-fadeIn">
+        <div className="mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-200 text-sm flex gap-3 shadow-lg animate-fadeIn">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
             stroke="currentColor"
-            className="w-5 h-5 text-red-400 shrink-0 mt-0.5"
+            className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5"
           >
             <path
               strokeLinecap="round"
@@ -300,8 +300,8 @@ export default function UrlForm({
             />
           </svg>
           <div>
-            <h4 className="font-semibold text-red-300">Extraction Failed</h4>
-            <p className="mt-1 text-red-400/90 leading-relaxed text-xs md:text-sm">{error}</p>
+            <h4 className="font-semibold text-red-800 dark:text-red-300">Extraction Failed</h4>
+            <p className="mt-1 text-red-600 dark:text-red-400/90 leading-relaxed text-xs md:text-sm">{error}</p>
           </div>
         </div>
       )}

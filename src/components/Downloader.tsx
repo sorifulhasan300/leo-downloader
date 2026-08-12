@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * Interface representing individual media items returned by ZM API / backend
@@ -308,10 +309,18 @@ export default function Downloader({
       };
 
       setResult(extractedData);
+      trackEvent("extract_video_success", {
+        category: "downloader",
+        label: extractedData.source || queryUrl,
+      });
       if (onSuccess) onSuccess(extractedData);
     } catch (err: any) {
       const errorMsg = err.message || "An unexpected error occurred while fetching video data.";
       setError(errorMsg);
+      trackEvent("extract_video_error", {
+        category: "downloader",
+        label: errorMsg,
+      });
       if (onError) onError(errorMsg);
     } finally {
       setIsLoading(false);
@@ -339,6 +348,11 @@ export default function Downloader({
   const handleDirectDownload = (mediaUrl: string, formatTitle?: string) => {
     if (!mediaUrl) return;
     
+    trackEvent("file_download_click", {
+      category: "downloader",
+      label: formatTitle || "video.mp4",
+    });
+
     const fileName = (formatTitle || "video.mp4").trim().replace(/[/\\?%*:|"<>]/g, "_");
     const proxyUrl = `/api/download-file?fileUrl=${encodeURIComponent(mediaUrl)}&fileName=${encodeURIComponent(fileName)}`;
 
@@ -356,6 +370,10 @@ export default function Downloader({
   const handleCopyLink = (mediaUrl: string) => {
     navigator.clipboard.writeText(mediaUrl);
     setCopiedUrl(mediaUrl);
+    trackEvent("copy_media_link", {
+      category: "downloader",
+      label: mediaUrl,
+    });
     setTimeout(() => setCopiedUrl(null), 2500);
   };
 

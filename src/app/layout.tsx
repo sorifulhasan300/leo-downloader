@@ -4,7 +4,9 @@ import Script from "next/script";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ThemeToggle from "@/components/ThemeToggle";
+import FirebaseAnalytics from "@/components/FirebaseAnalytics";
 import "./globals.css";
+
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -105,7 +107,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white font-sans selection:bg-indigo-600 selection:text-white transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
+          <FirebaseAnalytics />
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
           {/* Interstitial / Popunder script initialization placeholder */}
           <Script
             id="popunder-ad-network"

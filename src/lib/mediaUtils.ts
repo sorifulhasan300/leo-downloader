@@ -37,6 +37,47 @@ export function getRefererForUrl(urlStr: string): string {
 }
 
 /**
+ * Strips server-session-bound parameters (ip, ei, xpc, bui) from YouTube/GoogleVideo
+ * CDN URLs so they can be safely used in browser redirects or client-side fetches.
+ * Also cleans sparams/lsparams comma-separated whitelists to stay consistent.
+ */
+export function cleanYouTubeCdnUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+
+    if (!host.includes("googlevideo.com") && !host.includes("youtube.com")) {
+      return url;
+    }
+
+    const paramsToRemove = new Set(["ip", "ei", "xpc", "bui"]);
+
+    for (const key of paramsToRemove) {
+      parsed.searchParams.delete(key);
+    }
+
+    for (const whitelistKey of ["sparams", "lsparams"]) {
+      const whitelist = parsed.searchParams.get(whitelistKey);
+      if (whitelist) {
+        const cleaned = whitelist
+          .split(",")
+          .filter((p) => !paramsToRemove.has(p))
+          .join(",");
+        if (cleaned) {
+          parsed.searchParams.set(whitelistKey, cleaned);
+        } else {
+          parsed.searchParams.delete(whitelistKey);
+        }
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Validates whether a string is a valid HTTP/HTTPS URL.
  */
 export function isValidUrl(urlString: string): boolean {

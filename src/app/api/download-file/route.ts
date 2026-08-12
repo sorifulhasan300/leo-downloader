@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   cleanMediaUrl,
+  cleanYouTubeCdnUrl,
   getRefererForUrl,
   isValidUrl,
   sanitizeFileName,
@@ -34,8 +35,6 @@ async function handleProxyDownload(fileUrl: string | null | undefined, fileName:
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": referer,
-        "Sec-Fetch-Dest": "video",
-        "Sec-Fetch-Mode": "no-cors",
       },
       redirect: "follow",
     });
@@ -44,8 +43,8 @@ async function handleProxyDownload(fileUrl: string | null | undefined, fileName:
       console.warn(
         `Proxy download fetch returned status [${remoteResponse.status}]. Fallback redirecting to origin CDN: ${cleanUrl}`
       );
-      // Redirect to direct CDN URL as fallback so browser download does not fail
-      return NextResponse.redirect(cleanUrl, 302);
+      const redirectUrl = cleanYouTubeCdnUrl(cleanUrl);
+      return NextResponse.redirect(redirectUrl, 302);
     }
 
     const contentType = remoteResponse.headers.get("content-type") || "video/mp4";
@@ -72,8 +71,8 @@ async function handleProxyDownload(fileUrl: string | null | undefined, fileName:
     });
   } catch (error: any) {
     console.error("Error in /api/download-file proxy route, redirecting to origin URL:", error);
-    // On network or fetch error, fallback redirect to original CDN URL
-    return NextResponse.redirect(cleanUrl, 302);
+    const redirectUrl = cleanYouTubeCdnUrl(cleanUrl);
+    return NextResponse.redirect(redirectUrl, 302);
   }
 }
 

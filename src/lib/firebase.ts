@@ -11,8 +11,30 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase App singleton safely (prevents HMR re-initialization)
-const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+let app: FirebaseApp | null = null;
+
+function getFirebaseApp(): FirebaseApp | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (!app) {
+    const missingKeys = Object.entries(firebaseConfig)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingKeys.length > 0) {
+      console.warn(
+        `[Firebase] Skipping initialization: missing required config values: ${missingKeys.join(", ")}`
+      );
+      return null;
+    }
+
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  }
+
+  return app;
+}
 
 let analyticsInstance: Analytics | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
@@ -31,11 +53,14 @@ export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
 
   if (!analyticsPromise) {
     analyticsPromise = isSupported().then((supported) => {
-      if (supported) {
-        analyticsInstance = getAnalytics(app);
-        return analyticsInstance;
+      const firebaseApp = getFirebaseApp();
+
+      if (!supported || !firebaseApp) {
+        return null;
       }
-      return null;
+
+      analyticsInstance = getAnalytics(firebaseApp);
+      return analyticsInstance;
     });
   }
 
@@ -62,4 +87,4 @@ export const trackEvent = async (
   }
 };
 
-export { app };
+export { getFirebaseApp };

@@ -7,7 +7,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import FirebaseAnalytics from "@/components/FirebaseAnalytics";
 import "./globals.css";
 
-
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
@@ -98,7 +97,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const currentYear = new Date().getFullYear();
-
   return (
     <html
       lang="en"
